@@ -1,0 +1,16 @@
+[Unit]
+Description=Gemini Sentry - Continuous Proximity Monitoring Daemon
+After=network.target sound.target bluetooth.target graphical.target
+
+[Service]
+Type=simple
+User=root
+# We need DISPLAY for the visual alert. We assume :0 for the primary user.
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/jrrosenbum/.Xauthority
+ExecStart=/usr/bin/python3 /usr/local/lib/gemini-sentry/sentry_daemon.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

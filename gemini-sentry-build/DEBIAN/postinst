@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# Reload systemd to recognize new service
+if command -v systemctl >/dev/null; then
+    systemctl daemon-reload
+    systemctl enable gemini-sentry.service
+    echo "Gemini Sentry Service Enabled."
+    echo "To start it immediately, run: sudo systemctl start gemini-sentry"
+fi
+
+# Permissions
+chmod 755 /usr/local/lib/gemini-sentry/sentry_daemon.py
+chmod 755 /usr/local/lib/gemini-sentry/rf_sentry.py

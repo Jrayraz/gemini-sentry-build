@@ -1,0 +1,10 @@
+{
+    "whitelist": {
+        "00:00:00:00:00:00": "Example Device (Replace with your MAC)"
+    },
+    "approach_delta": 5,
+    "approach_window": 10.0,
+    "watchdog_timeout": 10.0,
+    "wifi_interface": "wlan0",
+    "rssi_threshold_alert": -85
+}

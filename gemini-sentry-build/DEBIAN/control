@@ -1,0 +1,11 @@
+Package: gemini-sentry
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3, python3-tk, bluez, iw, libnotify-bin, pulseaudio-utils, alsa-utils
+Maintainer: Jonathan & Gemini <jonathan.ray.rosenbum05@gmail.com>
+Description: Continuous Proximity Monitoring Daemon
+ This service monitors Bluetooth and Wi-Fi signals for approaching devices.
+ Upon detection of a rapid approach, it triggers an aggressive audio/visual alarm.
+ Configurable via /etc/gemini-sentry/config.json.
