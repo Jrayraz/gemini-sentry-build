@@ -38,7 +38,7 @@ class AggressiveAlert(threading.Thread):
             # Flashing/Audio could go here
             
             lbl_font = font.Font(family="Helvetica", size=48, weight="bold")
-            lbl = tk.Label(root, text=f"THREAT DETECTED\n\n{self.message}\n\n[PRESS ESC TO DISMISS]", 
+            lbl = tk.Label(root, text=f"THREAT DETECTED\n\n{self.message}\n\n[PRESS CTRL + ESC TO DISMISS]", 
                            fg="white", bg="red", font=lbl_font, justify="center")
             lbl.pack(expand=True)
             
@@ -52,16 +52,10 @@ class AggressiveAlert(threading.Thread):
                 logger.warning("Alert timed out (45s). Auto-dismissing to prevent lockout.")
                 root.destroy()
             
-            # 1. Manual Dismiss (Escape, Ctrl+Esc, Enter, Space)
-            root.bind('<Escape>', dismiss)
+            # 1. Manual Dismiss (Strict: Only Ctrl+Esc)
             root.bind('<Control-Escape>', dismiss)
-            root.bind('<Return>', dismiss)
-            root.bind('<space>', dismiss)
             
-            # 2. Click to dismiss
-            root.bind('<Button-1>', dismiss)
-            
-            # 3. Watchdog Timeout (prevent lock-screen deadlocks)
+            # 2. Watchdog Timeout (prevent lock-screen deadlocks)
             root.after(45000, timeout_kill) 
             
             root.mainloop()
