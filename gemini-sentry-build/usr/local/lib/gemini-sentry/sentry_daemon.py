@@ -1,6 +1,73 @@
 import signal
+import time
+import logging
+import threading
+import tkinter as tk
+from tkinter import font
+import rf_sentry
 
-# ... (Logging setup) ...
+# Configure Logging
+logger = logging.getLogger("gemini-sentry")
+
+class AggressiveAlert(threading.Thread):
+    """
+    Displays a fullscreen, aggressive alert overlay.
+    CAPTURES INPUT until acknowledged or timed out.
+    """
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
+        self.daemon = True # Ensure thread dies if main process dies
+
+    def run(self):
+        try:
+            root = tk.Tk()
+            root.title("GEMINI SENTRY ALERT")
+            
+            # --- SECURITY & LOCKING ---
+            root.attributes('-fullscreen', True)
+            root.attributes('-topmost', True)
+            root.configure(background='red')
+            root.update_idletasks()
+            
+            # Capture Input (The "Lock")
+            root.grab_set()
+            root.focus_force()
+            
+            # --- UI ELEMENTS ---
+            # Flashing/Audio could go here
+            
+            lbl_font = font.Font(family="Helvetica", size=48, weight="bold")
+            lbl = tk.Label(root, text=f"THREAT DETECTED\n\n{self.message}\n\n[PRESS ESC TO DISMISS]", 
+                           fg="white", bg="red", font=lbl_font, justify="center")
+            lbl.pack(expand=True)
+            
+            # --- FAIL-SAFES (The Fix) ---
+            
+            def dismiss(event=None):
+                logger.info("Alert acknowledged by user.")
+                root.destroy()
+
+            def timeout_kill():
+                logger.warning("Alert timed out (45s). Auto-dismissing to prevent lockout.")
+                root.destroy()
+            
+            # 1. Manual Dismiss (Escape, Ctrl+Esc, Enter, Space)
+            root.bind('<Escape>', dismiss)
+            root.bind('<Control-Escape>', dismiss)
+            root.bind('<Return>', dismiss)
+            root.bind('<space>', dismiss)
+            
+            # 2. Click to dismiss
+            root.bind('<Button-1>', dismiss)
+            
+            # 3. Watchdog Timeout (prevent lock-screen deadlocks)
+            root.after(45000, timeout_kill) 
+            
+            root.mainloop()
+            
+        except Exception as e:
+            logger.error(f"Failed to launch GUI Alert: {e}")
 
 def simulate_alert(signum, frame):
     """Signal Handler for SIGUSR1 - Injects Simulation."""
@@ -14,6 +81,8 @@ def simulate_alert(signum, frame):
     })
 
 def main():
+    # Setup Basic Logging if not already handled by rf_sentry
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logger.info("Starting Gemini Sentry Daemon...")
     
     # Register Signal Handler for Simulation
@@ -21,8 +90,6 @@ def main():
     logger.info("Simulation Handler Ready. Trigger with: kill -SIGUSR1 <PID>")
     
     # 1. Start the Detection Watchdog
-    # The Watchdog inside rf_sentry runs on its own threads (BT/WiFi)
-    # and populates rf_sentry.EVENT_QUEUE
     sentry = rf_sentry.SentryWatchdog()
     sentry.start()
     
@@ -40,11 +107,11 @@ def main():
                     logger.warning(f"PROCESSING ALERT: {msg}")
                     
                     # Launch the Aggressive Alert
-                    # We run this in a thread so the loop continues (though Tkinter mainloop blocks that thread)
+                    # Run in a thread, but the GUI itself has a mainloop that blocks *that* thread.
+                    # We join() to ensure we don't spawn 100 windows if the queue floods.
                     alert_thread = AggressiveAlert(msg)
                     alert_thread.start()
-                    alert_thread.join() # Wait for the alert to finish (or timeout) before processing next?
-                    # Actually, we probably want to block new alerts while one is screaming.
+                    alert_thread.join() 
             
             time.sleep(0.5)
             
